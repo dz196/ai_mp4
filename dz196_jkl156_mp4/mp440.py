@@ -1,6 +1,6 @@
 import inspect
 import sys
-
+import math
 '''
 Raise a "not defined" exception as a reminder 
 '''
@@ -63,24 +63,13 @@ should be used for training.
 '''
 computed_statistics = []
 
-def calc_pixels(feature, width, height):
-    #rtype: int ; number of pixels which are true
-    count = 0
-    for row in range(0, height):
-        for col in range(0, width):
-            if feature[row][col] == True:
-                count += 1
-    return count
-
 def compute_statistics(data, label, width, height, feature_extractor, percentage=100.0):
     # Your code starts here 
     # You should remove _raise_not_defined() after you complete your code
     global computed_statistics
-
     num_examples = percentage / 100 * len(data)
     #Features for percentage of data
     features = []
-
     for example in range(0, int(num_examples)):
         features.append(feature_extractor(data[example], width, height))
     #Prior distribution over labels; P(Y) = c(y) / n 
@@ -89,7 +78,7 @@ def compute_statistics(data, label, width, height, feature_extractor, percentage
     num_instances = [0,0,0,0,0,0,0,0,0,0] #10 values 0-9
     for i in range(0, int(num_examples)):
         num_instances[label[i]] += 1
-
+    print(num_instances)
     n = len(data)
 
     prior_distribution = []
@@ -100,16 +89,34 @@ def compute_statistics(data, label, width, height, feature_extractor, percentage
     print(prior_distribution)
 
     #Conditional probabilities of features given each label y; y can be 0-9
-    cond_probability = []
-    pixel_arr = [0,0,0,0,0,0,0,0,0,0] #c(f_i,y) = number of times F_i took value f_i in the training examples of label y
 
-    for example in range(0, int(num_examples)):
-        val = calc_pixels(features[example], width, height)
-        pixel_arr[label[example]] += val
+    cond_prob = [[[0.0 for r in range(width)] for y in range(height)] for z in range(10)] #Initialize to counts of zero
 
-    for i in range(0, len(pixel_arr)):
-        cond_probability.append(float(pixel_arr[i]) / (width*height*num_instances[i]))
-    print(pixel_arr)
+    #When a feature is true, increment the pixel by 1 for respective label
+    for example in range(0,int(num_examples)):
+        label_num = label[example]
+        for row in range(0, height):
+            for col in range(0, width):
+                if (features[example][row][col] == True):
+                   cond_prob[label_num][row][col] += 1
+    #print(cond_prob[0])
+    #Divide the previous by the number of instances of each label
+    for label_num in range(0,10):
+        for row in range(0, height):
+            for col in range(0, width):
+                cond_prob[label_num][row][col] = cond_prob[label_num][row][col] /float(num_instances[label_num]) 
+
+    #Calculate log P(y) + summation of log P(f_i | y) for each label
+
+    for label_num in range(0,10):
+        init_sum = math.log(prior_distribution[label_num])
+        sum = 0.0
+        for row in range(0, height):
+            for col in range(0, width):
+                sum += cond_prob[label_num][row][col]
+        sum = math.log(sum)
+        computed_statistics.append(sum + init_sum)
+    print(computed_statistics)
     # Your code ends here 
     _raise_not_defined()
 
