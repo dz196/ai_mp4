@@ -61,19 +61,55 @@ implementation.
 The percentage parameter controls what percentage of the example data
 should be used for training. 
 '''
+computed_statistics = []
+
+def calc_pixels(feature, width, height):
+    #rtype: int ; number of pixels which are true
+    count = 0
+    for row in range(0, height):
+        for col in range(0, width):
+            if feature[row][col] == True:
+                count += 1
+    return count
+
 def compute_statistics(data, label, width, height, feature_extractor, percentage=100.0):
     # Your code starts here 
     # You should remove _raise_not_defined() after you complete your code
-    #Prior distribution over labels; P(Y) = c(y) / n
+    global computed_statistics
+
+    num_examples = percentage / 100 * len(data)
+    #Features for percentage of data
+    features = []
+
+    for example in range(0, int(num_examples)):
+        features.append(feature_extractor(data[example], width, height))
+    #Prior distribution over labels; P(Y) = c(y) / n 
+    #c(y) is the number of training instances with label y; n is the total number of training instances
+
     num_instances = [0,0,0,0,0,0,0,0,0,0] #10 values 0-9
-    for i in range(0, len(label)):
+    for i in range(0, int(num_examples)):
         num_instances[label[i]] += 1
+
     n = len(data)
+
     prior_distribution = []
+
     for i in range(0, len(num_instances)):
         prior_distribution.append(float(num_instances[i]) / n)
 
     print(prior_distribution)
+
+    #Conditional probabilities of features given each label y; y can be 0-9
+    cond_probability = []
+    pixel_arr = [0,0,0,0,0,0,0,0,0,0] #c(f_i,y) = number of times F_i took value f_i in the training examples of label y
+
+    for example in range(0, int(num_examples)):
+        val = calc_pixels(features[example], width, height)
+        pixel_arr[label[example]] += val
+
+    for i in range(0, len(pixel_arr)):
+        cond_probability.append(float(pixel_arr[i]) / (width*height*num_instances[i]))
+    print(pixel_arr)
     # Your code ends here 
     _raise_not_defined()
 
