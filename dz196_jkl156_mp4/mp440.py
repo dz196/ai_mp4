@@ -17,8 +17,15 @@ def extract_basic_features(digit_data, width, height):
     features=[]
     # Your code starts here 
     # You should remove _raise_not_defined() after you complete your code
+    for row in range(0, height):
+        arr = []
+        for col in range(0, width):
+            if digit_data[row][col] == 0:
+                arr.append(False)
+            else:
+                arr.append(True)
+        features.append(arr)
     # Your code ends here 
-    _raise_not_defined()
     return features
 
 '''
@@ -57,6 +64,16 @@ should be used for training.
 def compute_statistics(data, label, width, height, feature_extractor, percentage=100.0):
     # Your code starts here 
     # You should remove _raise_not_defined() after you complete your code
+    #Prior distribution over labels; P(Y) = c(y) / n
+    num_instances = [0,0,0,0,0,0,0,0,0,0] #10 values 0-9
+    for i in range(0, len(label)):
+        num_instances[label[i]] += 1
+    n = len(data)
+    prior_distribution = []
+    for i in range(0, len(num_instances)):
+        prior_distribution.append(float(num_instances[i]) / n)
+
+    print(prior_distribution)
     # Your code ends here 
     _raise_not_defined()
 

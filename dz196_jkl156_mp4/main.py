@@ -102,7 +102,6 @@ if __name__ == "__main__":
     # Calling the basic feature extractor 
     features = mp.extract_basic_features(ALL_TRAINING_IMAGES[example_number],
         DATA_WIDTH, DATA_HEIGHT)
-
     # Compute parameters for a Naive Bayes classifier using the basic feature
     # extractor 
     mp.compute_statistics(ALL_TRAINING_IMAGES, ALL_TRAINING_LABELS, DATA_WIDTH,
