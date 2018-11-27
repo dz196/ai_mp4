@@ -61,18 +61,21 @@ implementation.
 The percentage parameter controls what percentage of the example data
 should be used for training. 
 '''
-computed_statistics = []
-
+prior_cs = []   #Log of prior probabilities
+conditional_cs_true = [] #Log of conditional probabilities for True
+conditional_cs_false = [] #Log of conditional probabilities for False
 def compute_statistics(data, label, width, height, feature_extractor, percentage=100.0):
     # Your code starts here 
     # You should remove _raise_not_defined() after you complete your code
-    global computed_statistics
+    global prior_cs
+    global conditional_cs_true
+    global conditional_cs_false
     num_examples = percentage / 100 * len(data)
     #Features for percentage of data
     features = []
     for example in range(0, int(num_examples)):
         features.append(feature_extractor(data[example], width, height))
-    #Prior distribution over labels; P(Y) = c(y) / n 
+    #Prior distribution over labels; P(Y) = c(y) / n ----------------------------------------------------------------------
     #c(y) is the number of training instances with label y; n is the total number of training instances
 
     num_instances = [0,0,0,0,0,0,0,0,0,0] #10 values 0-9
@@ -84,41 +87,42 @@ def compute_statistics(data, label, width, height, feature_extractor, percentage
     prior_distribution = []
 
     for i in range(0, len(num_instances)):
-        prior_distribution.append(float(num_instances[i]) / n)
+        prior_distribution.append(math.log(float(num_instances[i]) / n))
 
-    print(prior_distribution)
+    #print("Prior Distribution: " + str(prior_distribution))
+    prior_cs = prior_distribution   
 
-    #Conditional probabilities of features given each label y; y can be 0-9
+    #Conditional probabilities of features given each label y; y can be 0-9----------------------------------------
 
-    cond_prob = [[[0.0 for r in range(width)] for y in range(height)] for z in range(10)] #Initialize to counts of zero
+    #K value for smoothing
+    k = .0000000000000001
 
+    cond_prob_true = [[[0.0 for r in range(width)] for y in range(height)] for z in range(10)] #Initialize to counts of zero
+    cond_prob_false = [[[0.0 for r in range(width)] for y in range(height)] for z in range(10)]
+    
     #When a feature is true, increment the pixel by 1 for respective label
     for example in range(0,int(num_examples)):
         label_num = label[example]
         for row in range(0, height):
             for col in range(0, width):
                 if (features[example][row][col] == True):
-                   cond_prob[label_num][row][col] += 1
-    #print(cond_prob[0])
+                   cond_prob_true[label_num][row][col] += 1
+                else:
+                    cond_prob_false[label_num][row][col] += 1
+
     #Divide the previous by the number of instances of each label
     for label_num in range(0,10):
         for row in range(0, height):
             for col in range(0, width):
-                cond_prob[label_num][row][col] = cond_prob[label_num][row][col] /float(num_instances[label_num]) 
+                cond_prob_true[label_num][row][col] = math.log((cond_prob_true[label_num][row][col] + k) /(float(num_instances[label_num]) + 2*k))
+                cond_prob_false[label_num][row][col] = math.log((cond_prob_false[label_num][row][col] + k) /(float(num_instances[label_num]) + 2*k))
 
-    #Calculate log P(y) + summation of log P(f_i | y) for each label
 
-    for label_num in range(0,10):
-        init_sum = math.log(prior_distribution[label_num])
-        sum = 0.0
-        for row in range(0, height):
-            for col in range(0, width):
-                sum += cond_prob[label_num][row][col]
-        sum = math.log(sum)
-        computed_statistics.append(sum + init_sum)
-    print(computed_statistics)
+    #print(cond_prob_true[0])
+    #print(cond_prob_false[0])
+    conditional_cs_true = cond_prob_true
+    conditional_cs_false = cond_prob_false
     # Your code ends here 
-    _raise_not_defined()
 
 '''
 For the given features for a single digit image, compute the class 
@@ -128,9 +132,21 @@ def compute_class(features):
 
     # Your code starts here 
     # You should remove _raise_not_defined() after you complete your code
+    #Log of prior probabilites summed with conditional probabilities where pixel = true
+    sums = list(prior_cs)
+    for label in range(0,len(conditional_cs_true)):
+        for row in range(0, len(features)):
+            for col in range(0, len(features)):
+                if features[row][col] == True:
+                    sums[label] += conditional_cs_true[label][row][col]
+                else:
+                    sums[label] += conditional_cs_false[label][row][col]
+    max = float("-inf")
+    for i in range(0, len(sums)):
+        if (sums[i] > max):
+            max = sums[i]
+            predicted = i
     # Your code ends here 
-    _raise_not_defined()
-
     return predicted
 
 '''
@@ -140,11 +156,12 @@ of data
 def classify(data, width, height, feature_extractor):
 
     predicted=[]
-
     # Your code starts here 
     # You should remove _raise_not_defined() after you complete your code
+    for i in range(0, len(data)):
+        feature = feature_extractor(data[i], width, height)
+        predicted.append(compute_class(feature))
     # Your code ends here 
-    _raise_not_defined()
 
     return predicted
 
