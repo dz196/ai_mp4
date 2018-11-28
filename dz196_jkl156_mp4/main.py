@@ -107,7 +107,7 @@ if __name__ == "__main__":
     mp.compute_statistics(ALL_TRAINING_IMAGES, ALL_TRAINING_LABELS, DATA_WIDTH,
         DATA_HEIGHT, mp.extract_basic_features)
 
-    # Making predictions on validation data 
+    #Making predictions on validation data 
     predicted_labels = mp.classify(ALL_VALIDATION_IMAGES, DATA_WIDTH, DATA_HEIGHT,
         mp.extract_basic_features)
 
