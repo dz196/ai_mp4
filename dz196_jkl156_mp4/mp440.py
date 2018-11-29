@@ -40,10 +40,10 @@ def extract_advanced_features(digit_data, width, height):
     for row in range(0, height):
         arr = []
         for col in range(0, width):
-            if digit_data[row][col] == 2:
-                arr.append(True)
-            else:
+            if digit_data[row][col] == 0:
                 arr.append(False)
+            else:
+                arr.append(True)
         feature_1.append(arr)
     features.append(feature_1)
     #FEATURE 2: Accounting for just the + signs which border the number
@@ -51,7 +51,7 @@ def extract_advanced_features(digit_data, width, height):
     for row in range(0, height):
         arr = []
         for col in range(0, width):
-            if digit_data[row][col] == 1:
+            if digit_data[row][col] == 2:
                 arr.append(True)
             else:
                 arr.append(False)
@@ -67,8 +67,28 @@ def extract_final_features(digit_data, width, height):
     features=[]
     # Your code starts here 
     # You should remove _raise_not_defined() after you complete your code
+    feature_1 = []
+    for row in range(0, height):
+        arr = []
+        for col in range(0, width):
+            if digit_data[row][col] == 0:
+                arr.append(False)
+            else:
+                arr.append(True)
+        feature_1.append(arr)
+    features.append(feature_1)
+    #FEATURE 2: Accounting for just the + signs which border the number
+    feature_2 = []
+    for row in range(0, height):
+        arr = []
+        for col in range(0, width):
+            if digit_data[row][col] == 2:
+                arr.append(True)
+            else:
+                arr.append(False)
+        feature_2.append(arr)
+    features.append(feature_2)
     # Your code ends here 
-    _raise_not_defined()
     return features
 
 '''
@@ -103,7 +123,7 @@ def compute_statistics(data, label, width, height, feature_extractor, percentage
     num_instances = [0,0,0,0,0,0,0,0,0,0] #10 values 0-9
     for i in range(0, int(num_examples)):
         num_instances[label[i]] += 1
-    print(num_instances)
+    #print(num_instances)
 
     prior_distribution = []
 
@@ -114,7 +134,7 @@ def compute_statistics(data, label, width, height, feature_extractor, percentage
     prior_cs = prior_distribution   
     #----------------------------------------------------------------------------------------------------------------
     #K value for smoothing
-    k = .0000000000000001
+    k = 1
     #Conditional probabilities of features given each label y; y can be 0-9----------------------------------------
     if len(features[0]) == 28:
 
@@ -165,8 +185,22 @@ def compute_statistics(data, label, width, height, feature_extractor, percentage
             for row in range(0, height):
                 for col in range(0, width):
                     cond_prob_2[label_num][row][col] = (cond_prob_2[label_num][row][col] + k) /(float(num_instances[label_num]) + 2*k)
-        conditional_cs.append(cond_prob_2)
 
+        conditional_cs.append(cond_prob_2)
+        #Third Feature
+        cond_prob_3 = [[[0.0 for r in range(width/2)] for y in range(height)] for z in range(10)]   #Only take right half 
+        
+        for example in range(0,int(num_examples)):
+            label_num = label[example]
+            for row in range(0, height):
+                for col in range(width/2, width):#RIGHT HALF
+                    if (features[example][0][row][col] == True):    #Can just use the first feature array
+                       cond_prob_3[label_num][row][col-width/2] += 1
+        for label_num in range(0,10):
+            for row in range(0, height):
+                for col in range(0, width/2):
+                    cond_prob_3[label_num][row][col] = (cond_prob_3[label_num][row][col] + k) /(float(num_instances[label_num]) + 2*k)
+        conditional_cs.append(cond_prob_3)
     else:
         print("ERROR")
     # Your code ends here 
@@ -180,6 +214,8 @@ def compute_class(features):
     # You should remove _raise_not_defined() after you complete your code
     #Log of prior probabilites summed with conditional probabilities where pixel = true
     sums = list(prior_cs)
+    sums2 = list(prior_cs)
+    sums3 = list(prior_cs)
     #Extract Basic Feature Computation
     if len(features) == 28:
         for label in range(0,len(conditional_cs)):
@@ -187,35 +223,84 @@ def compute_class(features):
                 for col in range(0, len(features)):
                     if features[row][col] == True:
                         sums[label] += math.log(conditional_cs[label][row][col])
-                    else:
-                        sums[label] += math.log(1-conditional_cs[label][row][col])
+        #Calculate Max
+        max = float("-inf")
+        for i in range(0, len(sums)):
+            if (sums[i] > max):
+                max = sums[i]
+                predicted = i
 
     elif len(features) == 2:
-        for i in range(0,2):
-            for label in range(0,len(conditional_cs[i])):
-                for row in range(0, len(features[i])):
-                    for col in range(0, len(features[i])):
-                        if features[i][row][col] == True:
-                            sums[label] += math.log(conditional_cs[i][label][row][col])
-                        else:
-                            prob = 1-conditional_cs[i][label][row][col]
-                            if (prob < 0):
-                                prob = .00001
-                            sums[label] += math.log(prob)
+        for label in range(0,len(conditional_cs[0])):
+            for row in range(0, len(features[0])):
+                for col in range(0, len(features[0])):
+                    if features[0][row][col] == True:
+                        sums[label] += math.log(conditional_cs[0][label][row][col])
+                    else:
+                        sums[label] += math.log(1-conditional_cs[0][label][row][col])
+
+        for label in range(0,len(conditional_cs[1])):
+            for row in range(0, len(features[1])):
+                for col in range(0, len(features[1])):
+                    if features[1][row][col] == True:
+                        sums2[label] += math.log(conditional_cs[1][label][row][col])
+                    #else:
+                        #sums2[label] += math.log(1-conditional_cs[1][label][row][col])
+
+        for label in range(0,len(conditional_cs[2])):
+            for row in range(0, len(features[0])):
+                for col in range(0, len(features[0])/2):
+                    if features[0][row][col+len(features[0])/2] == True:
+                        sums3[label] += math.log(conditional_cs[2][label][row][col])
+                    #else:
+                        #sums3[label] += math.log(1-conditional_cs[2][label][row][col])
+        
+        #Calculate max and get prediction
+        predicted = bestguess(sums, sums2, sums3)
+
+        """max = float("-inf")
+        for i in range(0, len(sums)):
+            if (sums3[i] > max):
+                max = sums3[i]
+                predicted = i"""
 
     else:
         print("ERROR")
         return None
 
-    #Calculate max and get prediction
+
+    # Your code ends here 
+    return predicted
+def bestguess(sums, sums2, sums3):
+    guess1 = -1
+    guess2 = -1
+    guess3 = -1
     max = float("-inf")
+    max2 = float("-inf")
+    max3 = float("inf")
+
     for i in range(0, len(sums)):
         if (sums[i] > max):
             max = sums[i]
-            predicted = i
-    # Your code ends here 
-    return predicted
+            guess1 = i
+        if (sums2[i] > max2):
+            max2 = sums2[i]
+            guess2 = i
+        if (sums3[i] > max3):
+            max3 = sum3[i]
+            guess3 = i
+    if (guess1 == guess2 and guess2 == guess3):
+        return guess1
+    elif(guess1 == guess3 and guess2 != guess3):
+        return guess1
+    elif(guess1 == guess2 and guess2 != guess3):
+        return guess1
+    elif(guess2 == guess3 and guess1 != guess2):
+        return guess2
+    else:
+        return guess1
 
+    return None
 '''
 Compute joint probaility for all the classes and make predictions for a list
 of data
